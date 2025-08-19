@@ -1,0 +1,8 @@
+# HTTP requests for Telegram API
+requests==2.31.0
+
+# Data validation and serialization
+pydantic==1.10.13
+
+# Optional: для загрузки переменных окружения
+# python-dotenv==1.0.0 
