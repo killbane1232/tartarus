@@ -1,6 +1,6 @@
 # ======== CONFIG ========
-TELEGRAM_TOKEN = "7830691284:AAEU1cGMnXsRx7U_Fa062dyONHxqEGee8iE"
-OLLAMA_URL = "http://192.168.31.52:11434/api/chat"
+TELEGRAM_TOKEN = "your_token"
+OLLAMA_URL = "http://localhost/api/chat"
 OLLAMA_MODEL = "gpt-oss:20b"
 #OLLAMA_MODEL = "qwen3:8b"
 USE_OLLAMA = True
