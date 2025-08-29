@@ -29,75 +29,10 @@ def generate_character(user_id: int, name: str) -> CharacterModel:
     )
     return char
 
-def create_default_dungeon() -> GameStateModel:
-    """Создание подземелья по умолчанию"""
-    # Создаем персонажа по умолчанию
-    player = CharacterModel(
-        name="Герой",
-        race="Человек",
-        cls="Воин",
-        hp=15,
-        inventory=["Меч", "Щит"],
-        location="Room1"
-    )
-    
-    # Создаем комнаты
-    room1 = RoomModel(
-        description="Каменная комната с факелами на стенах. Воздух пахнет пылью и древностью.",
-        items=["Факел", "Ключ"],
-        enemies=[],
-        friendly_npcs=[],
-        exits={
-            "Room2": ExitModel(target_room="Room2", name="Деревянная дверь", is_hidden=False),
-            "Room3": ExitModel(target_room="Room3", name="Секретный проход", is_hidden=True)
-        }
-    )
-    
-    room2 = RoomModel(
-        description="Старая библиотека с высокими полками. Книги покрыты пылью.",
-        items=["Старинная книга", "Свиток"],
-        enemies=["Скелет"],
-        friendly_npcs=["Мудрый библиотекарь"],
-        exits={
-            "Room1": ExitModel(target_room="Room1", name="Каменная арка", is_hidden=False),
-            "Room3": ExitModel(target_room="Room3", name="Ржавая дверь", is_hidden=False)
-        }
-    )
-    
-    room3 = RoomModel(
-        description="Темная камера с алтарем. В углу мерцает странный свет.",
-        items=["Драгоценный камень"],
-        enemies=[],
-        friendly_npcs=[],
-        exits={
-            "Room2": ExitModel(target_room="Room2", name="Деревянная дверь", is_hidden=False),
-            "Room1": ExitModel(target_room="Room1", name="Потайной ход", is_hidden=True)
-        }
-    )
-    
-    # Создаем подземелье
-    dungeon = DungeonModel(
-        rooms={
-            "Room1": room1,
-            "Room2": room2,
-            "Room3": room3
-        }
-    )
-    
-    adventure_description = """Древние руины хранят множество тайн. Говорят, что в этих стенах спрятаны сокровища древних магов, но путь к ним охраняют нежить и ловушки. Ваша задача - исследовать подземелье и найти все его секреты."""
-    
-    return GameStateModel(
-        player=player, 
-        dungeon=dungeon,
-        adventure_description=adventure_description,
-        story_context="Вы стоите в древних руинах, готовые к приключению.",
-        is_adventure_completed=False
-    )
-
 def generate_dungeon(adventure_prompt: str) -> GameStateModel:
     """Генерация подземелья"""
     if USE_OLLAMA:
-        system_prompt = """Ты создаешь DnD приключения в формате JSON. 
+        system_prompt = f"""Ты создаешь DnD приключения в формате JSON. 
 
 ПРАВИЛА:
 1. Первая комната (Room1) не должна содержать врагов
@@ -109,40 +44,44 @@ def generate_dungeon(adventure_prompt: str) -> GameStateModel:
 7. Описание комнаты обязательно должно содержать все предметы, врагов и персонажей в этой комнате, но НЕ должна содержать скрытые проходы
 8. Подземелье обязательно должно иметь конечную цель, по достижению которой приключение закончится и эта цель должна быть далеко от начальной локации.
 9. Отвечай ТОЛЬКО в формате JSON, без дополнительного текста
+10. Если пользователь попросил конкретного персонажа, то создай его с указанными параметрами, если их нет - придумай их сам.
 
 СТРУКТУРА:
-{
-  "player": {
+{{
+  "player": {{
     "name": "Герой",
     "race": "Человек", 
     "cls": "Воин",
     "hp": 15,
     "inventory": ["Меч", "Щит"],
     "location": "Room1"
-  },
-  "dungeon": {
-    "rooms": {
-      "Room1": {
+  }},
+  "dungeon": {{
+    "rooms": {{
+      "Room1": {{
         "description": "Описание комнаты",
         "items": ["список предметов"],
         "enemies": [],
         "friendly_npcs": ["список NPC"],
-        "exits": {
-          "Room2": {
+        "exits": {{
+          "Room2": {{
             "target_room": "Room2",
             "name": "Имя выхода",
             "is_hidden": false,
             "is_blocked": false
-          }
-        }
-      }
-    }
-  },
+          }}
+        }}
+      }}
+    }}
+  }},
   "adventure_description": "Описание приключения",
   "story_context": "Начальный контекст",
   "is_adventure_completed": false
-}"""
+}}
 
+Доступные рассы: {RACES}
+Доступные классы: {CLASSES}
+"""
         user_prompt = "Создай DnD приключение по указанной структуре."
         
         if adventure_prompt:
@@ -156,12 +95,12 @@ def generate_dungeon(adventure_prompt: str) -> GameStateModel:
         # Если Ollama не смог сгенерировать, используем подземелье по умолчанию
         if result is None:
             logger.warning("Ollama не смог сгенерировать подземелье, используем подземелье по умолчанию")
-            return create_default_dungeon()
+            return None
         
         return result
     else:
         logger.info("Используем подземелье по умолчанию (режим без Ollama)")
-        return create_default_dungeon()
+        return None
 
 def apply_state_changes(state: GameStateModel, changes: StateChange) -> GameStateModel:
     """Применение изменений к состоянию игры"""
